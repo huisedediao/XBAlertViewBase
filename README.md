@@ -1,5 +1,7 @@
 # XBAlertViewBase
 弹出框基类，帮助你快速集成自定义弹出菜单<br/><br/>
+# 安装
+pod 'XBAlertViewBase'
 
 ### 使用方法：<br/>
 继承XBAlertViewBase，重写init方法或者actionBeforeShow方法即可<br/><br/>
@@ -32,16 +34,16 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     WEAK_SELF
-    
+
     xbBaseV=[[XBAlertViewBase alloc] initWithDisplayView:self.view];
     //淡入淡出效果
     xbBaseV.fadeInFadeOut=YES;
-    
+
     //显示布局block，在里面设置frame或者约束
     xbBaseV.showLayoutBlock=^(XBAlertViewBase *alertView){
         //可以添加约束，也可以设置frame
 //        alertView.frame=CGRectMake(250, 60, ScreenWidth-250-10, 100);
-        
+
         //为了减少依赖，XBAlertViewBase并没有包含masonry，这里用remake，重做约束
         [alertView mas_remakeConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(weakSelf.view).mas_offset(60);
@@ -50,7 +52,7 @@
             make.height.mas_equalTo(100);
         }];
     };
-    
+
     //隐藏时的布局的block，在里面设置frame或者约束
     xbBaseV.hiddenLayoutBlock=^(XBAlertViewBase *alertView){
         //可以添加约束，也可以设置frame
