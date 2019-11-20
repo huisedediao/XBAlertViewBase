@@ -10,4 +10,6 @@
 
 @interface XBAlertViewBase (Queue)
 
++ (NSMutableArray * _Nonnull )arrmAlertViews;
+
 @end
