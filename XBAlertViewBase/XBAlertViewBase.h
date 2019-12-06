@@ -4,20 +4,11 @@
 
 #import <UIKit/UIKit.h>
 
-
 @class XBAlertViewBase;
 
 typedef void (^SetConstraintOrFrameForShowBlock)(XBAlertViewBase *alertView);
 typedef void (^SetConstraintOrFrameForHiddenBlock)(XBAlertViewBase *alertView);
 typedef void (^TouchBeginBlock)(XBAlertViewBase *alertView);
-
-@protocol XBAlertViewBaseLayoutDelegate <NSObject>
-
--(void)alertViewBaseSetConstraintOrFrameForShow:(XBAlertViewBase *)alertViewBase;
--(void)alertViewBaseSetConstraintOrFrameForHidden:(XBAlertViewBase *)alertViewBase;
-
-@end
-
 
 @interface XBAlertViewBase : UIView
 
@@ -71,12 +62,12 @@ typedef void (^TouchBeginBlock)(XBAlertViewBase *alertView);
 @property (assign,nonatomic) CGRect hiddenFrame;
 
 /**
- 显示在哪个view上(或者window)
+ 显示在哪个view上
  */
-@property (weak,nonatomic)UIView *displayView;
+@property (weak,readonly,nonatomic)UIView *displayView;
 
 /**
- 点击其他区域是否隐藏
+ 点击其他区域是否隐藏，默认yes
  */
 @property (nonatomic,assign,getter=isHideWhileTouchOtherArea) BOOL hideWhileTouchOtherArea;
 
@@ -100,24 +91,14 @@ typedef void (^TouchBeginBlock)(XBAlertViewBase *alertView);
  */
 @property (assign,nonatomic,readonly) BOOL isShowKeyboard;
 
-
 /**
- 类方法进行show,避免从xib或者sb加载的controller覆盖视图
+ * 是否需要被显示队列管理
  */
-+(void)showFor:(id)obj keyPath:(NSString *)keyPath;
-/**
- second秒后,类方法进行show,避免从xib或者sb加载的controller覆盖视图
- */
-+(void)showFor:(id)obj keyPath:(NSString *)keyPath afterSecond:(CGFloat)second;
-
+@property (assign,nonatomic) BOOL needInQueue;
 
 /**
- 类方法创建
- */
-+(XBAlertViewBase *)alertMenuWithDisplayView:(id)displayView;
-
-/**
- 初始化方法,带弹出菜单要显示的view
+ 初始化方法
+ displayView:显示在哪个view上
  */
 -(id)initWithDisplayView:(id)displayView;
 
@@ -150,6 +131,5 @@ typedef void (^TouchBeginBlock)(XBAlertViewBase *alertView);
  */
 - (void)actionBeforeShow;
 
-/** 代理 */
-@property (nonatomic,weak) id <XBAlertViewBaseLayoutDelegate> layoutDelegate;
 @end
+

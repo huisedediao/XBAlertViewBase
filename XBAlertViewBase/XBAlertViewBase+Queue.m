@@ -37,7 +37,7 @@ static NSMutableArray *arrmAlertViews_;
 
 - (void)logShow
 {
-    if ([self isKindOfClass:objc_getClass("XBAlertView")] == false)
+    if (self.needInQueue == false)
     {
         [self logShow];
         return;
@@ -52,7 +52,7 @@ static NSMutableArray *arrmAlertViews_;
 }
 - (void)logHidden
 {
-    if ([self isKindOfClass:objc_getClass("XBAlertView")] == false)
+    if (self.needInQueue == false)
     {
         [self logHidden];
         return;
@@ -70,4 +70,5 @@ static NSMutableArray *arrmAlertViews_;
     }
 }
 @end
+
 

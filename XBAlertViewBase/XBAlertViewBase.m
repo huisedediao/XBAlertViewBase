@@ -1,43 +1,44 @@
-
 #import "XBAlertViewBase.h"
-#import "UIView+AdaptKeyboard.h"
 
 #define XBWeakSelf __weak __typeof(&*self)xbWeakSelf = self;
 #define KDisplayViewDidableTime (0.5)
 
-@interface XBAlertViewBase ()
-
-@end
-
 @implementation XBAlertViewBase
-
-+(XBAlertViewBase *)alertMenuWithDisplayView:(id)displayView
-{
-    XBAlertViewBase *alertMenu=[[XBAlertViewBase alloc] initWithDisplayView:displayView];
-    return alertMenu;
-}
 
 - (instancetype)initWithFrame:(CGRect)frame
 {
     if (self = [super initWithFrame:frame])
     {
-        self.backgroundColor=[UIColor whiteColor];
-        self.hidden=YES;
-        self.animating=YES;
-        self.duration=0.3;
-        self.hideWhileTouchOtherArea=YES;
-        self.backgroundViewFadeInFadeOut=YES;
+        self.backgroundColor = [UIColor whiteColor];
+        self.hidden = YES;
+        self.animating = YES;
+        self.duration = 0.3;
+        self.hideWhileTouchOtherArea = YES;
+        self.backgroundViewFadeInFadeOut = YES;
     }
     return self;
 }
 
 -(id)initWithDisplayView:(id)displayView
 {
-    if (self=[self init])
+    if (self = [self init])
     {
-        self.displayView=displayView;
+        [self setDisplayView:displayView];
     }
     return self;
+}
+
+-(void)setDisplayView:(id)displayView
+{
+    _displayView = displayView;
+    
+    _isShowState = NO;
+    self.backgroundView = [[UIView alloc] initWithFrame:CGRectMake(-2500, -2500, 10000, 10000)];
+    [displayView addSubview:self.backgroundView];
+    [displayView addSubview:self];
+    self.backgroundView.backgroundColor = self.backgroundViewColor?self.backgroundViewColor:[[UIColor blackColor] colorWithAlphaComponent:0.8];
+    self.backgroundView.hidden = YES;
+    [self.backgroundView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(clickBackgroundView:)]];
 }
 
 -(void)dealloc
@@ -55,7 +56,7 @@
     {
         return;
     }
-    _needAdaptKeyboard=needAdaptKeyboard;
+    _needAdaptKeyboard = needAdaptKeyboard;
     
     if (needAdaptKeyboard)
     {
@@ -91,32 +92,55 @@
     {
         return;
     }
-    _isShowKeyboard=YES;
-    [self xb_adaptKeyBoardForShowWithDisplayView:self.displayView notification:noti];
+    _isShowKeyboard = YES;
+    [self adaptKeyBoardForShowWithDisplayView:_displayView notification:noti];
 }
+
 -(void)keyboardWillHide:(NSNotification *)noti
 {
     if (self.isShowState == NO)
     {
         return;
     }
-    _isShowKeyboard=NO;
-    [self xb_adaptKeyBoardForHideWithDisplayView:self.displayView];
+    _isShowKeyboard = NO;
+    [self adaptKeyBoardForHideWithDisplayView:_displayView];
 }
 
--(void)setDisplayView:(id)displayView
+-(void)adaptKeyBoardForShowWithDisplayView:(UIView *)displayView notification:(NSNotification *)noti
 {
-    _displayView=displayView;
-    
-    _isShowState=NO;
-    self.backgroundView=[[UIView alloc] initWithFrame:CGRectMake(-2500, -2500, 10000, 10000)];
-    [displayView addSubview:self.backgroundView];
-    [displayView addSubview:self];
-    self.backgroundView.backgroundColor=self.backgroundViewColor?self.backgroundViewColor:[[UIColor blackColor] colorWithAlphaComponent:0.8];
-    self.backgroundView.hidden=YES;
-    [self.backgroundView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(clickBackgroundView:)]];
+    static NSTimeInterval last = 0;
+    NSTimeInterval current = [[NSDate date] timeIntervalSince1970];
+    if (current - last > 1)
+    {
+        [displayView layoutIfNeeded];
+        CGRect rect = [noti.userInfo[@"UIKeyboardFrameEndUserInfoKey"] CGRectValue];
+        CGFloat keyBoardHeight = rect.size.height;
+        if (keyBoardHeight<215)
+        {
+            keyBoardHeight=250;
+        }
+        CGRect viewRect=[self convertRect:self.bounds toView:displayView];
+        CGFloat maxYOfView=CGRectGetMaxY(viewRect);
+        CGFloat displayViewH=displayView.bounds.size.height;
+        CGFloat gap= (displayViewH-keyBoardHeight)-maxYOfView;
+        if (gap < 0)//被遮挡了
+        {
+            [UIView animateWithDuration:0.5 animations:^{
+                CGRect tempRect=displayView.frame;
+                tempRect.origin.y+=gap;
+                displayView.frame=tempRect;
+            }];
+        }
+    }
+    last = current;
 }
 
+-(void)adaptKeyBoardForHideWithDisplayView:(UIView *)displayView
+{
+    CGRect tempRect = displayView.frame;
+    tempRect.origin.y=0;
+    displayView.frame=tempRect;
+}
 
 -(void)clickBackgroundView:(UITapGestureRecognizer *)tap
 {
@@ -132,11 +156,10 @@
     }
 }
 
-
 -(void)setBackgroundViewColor:(UIColor *)backgroundViewColor
 {
-    _backgroundViewColor=backgroundViewColor;
-    self.backgroundView.backgroundColor=backgroundViewColor;
+    _backgroundViewColor = backgroundViewColor;
+    self.backgroundView.backgroundColor = backgroundViewColor;
 }
 
 - (void)actionBeforeShow
@@ -146,9 +169,9 @@
 
 - (void)controlDisplayViewUserInteractionEnabled
 {
-    self.displayView.userInteractionEnabled = NO;
+    _displayView.userInteractionEnabled = NO;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(KDisplayViewDidableTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        self.displayView.userInteractionEnabled = YES;
+        self->_displayView.userInteractionEnabled = YES;
     });
 }
 
@@ -162,8 +185,8 @@
         [self actionBeforeShow];
         [self setInitLayout];
         
-        self.backgroundView.hidden=NO;
-        self.hidden=NO;
+        self.backgroundView.hidden = NO;
+        self.hidden = NO;
         
         if (self.animating)
         {
@@ -175,21 +198,21 @@
         {
             [self sameDemoOfShow];
         }
-        _isShowState=YES;
+        _isShowState = YES;
     }
 }
 -(void)sameDemoOfShow
 {
     //设置淡入淡出效果
-    if (self.isFadeInFadeOut==YES)
+    if (self.isFadeInFadeOut == YES)
     {
-        self.alpha=1;
+        self.alpha = 1;
     }
     
     //黑色半透明背景淡入淡出效果
-    if (self.isBackgroundViewFadeInFadeOut==YES)
+    if (self.isBackgroundViewFadeInFadeOut == YES)
     {
-        self.backgroundView.alpha=1;
+        self.backgroundView.alpha = 1;
     }
     
     if (self.showLayoutBlock)
@@ -197,14 +220,9 @@
         XBWeakSelf
         self.showLayoutBlock(xbWeakSelf);
     }
-    else if ([self.layoutDelegate respondsToSelector:@selector(alertViewBaseSetConstraintOrFrameForShow:)])
-    {
-        //代理设置约束或者frame
-        [self.layoutDelegate alertViewBaseSetConstraintOrFrameForShow:self];
-    }
     else
     {
-        self.frame=self.showFrame;
+        self.frame = self.showFrame;
     }
     [self.superview layoutIfNeeded];
 }
@@ -213,8 +231,8 @@
 {
     if (self.superview == nil)
     {
-        [self.displayView addSubview:self.backgroundView];
-        [self.displayView addSubview:self];
+        [_displayView addSubview:self.backgroundView];
+        [_displayView addSubview:self];
     }
 }
 
@@ -237,7 +255,7 @@
         {
             [self sameDemoOfHidden];
         }
-        _isShowState=NO;
+        _isShowState = NO;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(KDisplayViewDidableTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self removeFromSuperview];
             [self.backgroundView removeFromSuperview];
@@ -248,14 +266,14 @@
 -(void)setInitLayout
 {
     //设置淡入淡出效果
-    if (self.isFadeInFadeOut==YES)
+    if (self.isFadeInFadeOut == YES)
     {
-        self.alpha=0;
+        self.alpha = 0;
     }
     //黑色半透明背景淡入淡出效果
-    if (self.isBackgroundViewFadeInFadeOut==YES)
+    if (self.isBackgroundViewFadeInFadeOut == YES)
     {
-        self.backgroundView.alpha=0;
+        self.backgroundView.alpha = 0;
     }
     
     if (self.hiddenLayoutBlock)
@@ -263,47 +281,26 @@
         XBWeakSelf
         self.hiddenLayoutBlock(xbWeakSelf);
     }
-    else if ([self.layoutDelegate respondsToSelector:@selector(alertViewBaseSetConstraintOrFrameForHidden:)])
-    {
-        //代理设置约束或者frame
-        [self.layoutDelegate alertViewBaseSetConstraintOrFrameForHidden:self];
-    }
     else
     {
-        self.frame=self.hiddenFrame;
+        self.frame = self.hiddenFrame;
     }
     [self.superview layoutIfNeeded];
     
 }
+
 -(void)sameDemoOfHidden
 {
-    self.hidden=YES;
-    self.backgroundView.hidden=YES;
+    self.hidden = YES;
+    self.backgroundView.hidden = YES;
 }
+
 -(void)hiddenAfterSecond:(CGFloat)second
 {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(second * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self hidden];
     });
 }
-
-
-+(void)showFor:(id)obj keyPath:(NSString *)keyPath;
-{
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        XBAlertViewBase *alertView=[obj valueForKey:keyPath];
-        [alertView show];
-    });
-}
-
-+(void)showFor:(id)obj keyPath:(NSString *)keyPath afterSecond:(CGFloat)second
-{
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(second * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        XBAlertViewBase *alertView=[obj valueForKey:keyPath];
-        [alertView show];
-    });
-}
-
 
 -(void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
@@ -314,4 +311,6 @@
         self.touchBlock(xbWeakSelf);
     }
 }
+
 @end
+
